@@ -9,54 +9,51 @@
 </head>
 
 <body>
-    <!-- Header -->
-    <div class="top-header">
+    <div class="header">
         <h1 class="app-title">AdEx</h1>
     </div>
 
-    <!-- Stats Section -->
-    <div class="section">
-        <div class="stat-card">
-            <div class="stat-value" id="adsSkipped">0</div>
-            <div class="stat-label">ads blocked</div>
+    <div class="content">
+        <div class="section">
+            <div class="stat-box">
+                <div class="stat-value" id="adsSkipped">0</div>
+                <div class="stat-label">ads blocked</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="setting-item">
+                <span class="setting-label">Cover ads</span>
+                <label class="switch">
+                    <input type="checkbox" id="enableOverlay" checked>
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Auto-skip</span>
+                <label class="switch">
+                    <input type="checkbox" id="enableAutoSkip" checked>
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Mute ads</span>
+                <label class="switch">
+                    <input type="checkbox" id="enableAutoMute" checked>
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="section">
+            <select id="overlayType" class="select-input">
+                <option value="black">Black overlay</option>
+                <option value="white">White overlay</option>
+            </select>
         </div>
     </div>
 
-    <!-- Settings Section -->
-    <div class="section">
-        <div class="setting-row">
-            <span class="setting-text">Cover ads</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="enableOverlay" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
-        <div class="setting-row">
-            <span class="setting-text">Auto-skip</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="enableAutoSkip" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
-        <div class="setting-row">
-            <span class="setting-text">Mute ads</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="enableAutoMute" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
-    </div>
-
-    <!-- Overlay Selector -->
-    <div class="section">
-        <select id="overlayType" class="select-box">
-            <option value="black">Black overlay</option>
-            <option value="white">White overlay</option>
-        </select>
-    </div>
-
-    <!-- Status -->
-    <div class="status-bar" id="status"></div>
+    <div class="status" id="status"></div>
 
     <script src="popup.js"></script>
 </body>
