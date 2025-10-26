@@ -27,9 +27,6 @@
             ],
             "js": [
                 "youtube-content.js"
-            ],
-            "css": [
-                "youtube-overlay.css"
             ]
         }
     ]

@@ -1,195 +1,117 @@
-// YouTube Ad Overlay & Auto-Skip
-console.log('AdEx: YouTube content script loaded');
+// AdEx - YouTube Ad Blocker
+console.log('AdEx: Content script loaded');
 
-let enableOverlay = true;
-let enableAutoSkip = true;
-let enableAutoMute = true;
-let overlayType = 'black';
-let adsSkipped = 0;
-let videoWasMuted = false;
+let settings = {
+    enableOverlay: true,
+    enableAutoSkip: true,
+    enableAutoMute: true,
+    overlayType: 'black',
+    adsSkipped: 0
+};
+
 let isAdPlaying = false;
+let videoWasMuted = false;
 
 // Load settings
-chrome.storage.local.get(['enableOverlay', 'enableAutoSkip', 'enableAutoMute', 'overlayType'], (result) => {
-    enableOverlay = result.enableOverlay !== false;
-    enableAutoSkip = result.enableAutoSkip !== false;
-    enableAutoMute = result.enableAutoMute !== false;
-    overlayType = result.overlayType || 'black';
-    console.log('AdEx: Settings loaded', { enableOverlay, enableAutoSkip, enableAutoMute, overlayType });
+chrome.storage.local.get(['enableOverlay', 'enableAutoSkip', 'enableAutoMute', 'overlayType', 'adsSkipped'], (result) => {
+    Object.assign(settings, result);
 });
 
-// Listen for settings changes from popup
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (changes.enableOverlay) {
-        enableOverlay = changes.enableOverlay.newValue;
-    }
-    if (changes.enableAutoSkip) {
-        enableAutoSkip = changes.enableAutoSkip.newValue;
-    }
-    if (changes.enableAutoMute) {
-        enableAutoMute = changes.enableAutoMute.newValue;
-    }
-    if (changes.overlayType) {
-        overlayType = changes.overlayType.newValue;
-    }
-});
-
-// Function to create overlay
-function createOverlay() {
-    // Remove existing overlay if any
-    const existingOverlay = document.getElementById('adex-overlay');
-    if (existingOverlay) {
-        existingOverlay.remove();
-    }
-
-    if (!enableOverlay) return;
-
-    // Find the ad container
-    const adContainer = document.querySelector('.ad-showing, .ytp-ad-player-overlay, [class*="ad-interrupting"]');
-
-    if (!adContainer) {
-        // Try finding video container
-        const videoContainer = document.querySelector('.html5-video-container, .html5-main-video');
-        if (videoContainer) {
-            const overlay = document.createElement('div');
-            overlay.id = 'adex-overlay';
-            overlay.className = 'adex-overlay';
-
-            const backgroundColor = overlayType === 'white' ? '#FFFFFF' : '#000000';
-            overlay.style.backgroundColor = backgroundColor;
-
-            videoContainer.appendChild(overlay);
-        }
-    } else {
-        // Overlay on ad container
-        const overlay = document.createElement('div');
-        overlay.id = 'adex-overlay';
-        overlay.className = 'adex-overlay';
-
-        const backgroundColor = overlayType === 'white' ? '#FFFFFF' : '#000000';
-        overlay.style.backgroundColor = backgroundColor;
-
-        document.body.appendChild(overlay);
-    }
-}
-
-// Function to click skip button
-function clickSkipButton() {
-    if (!enableAutoSkip) return;
-
-    // Multiple possible selectors for skip button
-    const skipSelectors = [
-        '.ytp-ad-skip-button',
-        '.ytp-ad-skip-button-modern',
-        'button.ytp-ad-skip-button',
-        '.ytp-ad-overlay-close-button'
-    ];
-
-    let clicked = false;
-    skipSelectors.forEach(selector => {
-        const skipButton = document.querySelector(selector);
-        if (skipButton && skipButton.offsetParent !== null) {
-            skipButton.click();
-            clicked = true;
-            adsSkipped++;
-            console.log('AdEx: Ad skipped!', adsSkipped);
-
-            // Save stats
-            chrome.storage.local.set({ adsSkipped: adsSkipped });
-
-            // Send message to background to update popup
-            chrome.runtime.sendMessage({ action: 'adSkipped', count: adsSkipped });
-        }
+// Listen for settings changes
+chrome.storage.onChanged.addListener((changes) => {
+    Object.keys(changes).forEach(key => {
+        settings[key] = changes[key].newValue;
     });
+});
 
-    return clicked;
+function createOverlay() {
+    if (!settings.enableOverlay) return;
+
+    const existing = document.getElementById('adex-overlay');
+    if (existing) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'adex-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: ${settings.overlayType === 'white' ? '#FFFFFF' : '#000000'};
+        z-index: 999999;
+        pointer-events: none;
+    `;
+
+    document.body.appendChild(overlay);
 }
 
-// Function to mute/unmute video
-function handleMute(newAdState) {
-    if (!enableAutoMute) return;
+function removeOverlay() {
+    const overlay = document.getElementById('adex-overlay');
+    if (overlay) overlay.remove();
+}
 
+function muteVideo() {
+    if (!settings.enableAutoMute) return;
     const video = document.querySelector('video');
-    if (!video) return;
-
-    // If ad just started playing
-    if (newAdState && !isAdPlaying) {
-        // Store original muted state
+    if (video) {
         videoWasMuted = video.muted;
-        // Mute the video
         video.muted = true;
-        console.log('AdEx: Ad detected, muting video');
-    }
-    // If ad just ended
-    else if (!newAdState && isAdPlaying) {
-        // Restore original muted state
-        if (!videoWasMuted) {
-            video.muted = false;
-            console.log('AdEx: Ad ended, unmuting video');
-        }
     }
 }
 
-// Monitor for ads
-function monitorAds() {
-    // Check if ad is playing
-    const playerStatus = document.querySelector('.ytp-ad-module, .ytp-ad-overlay-container, .ad-showing');
+function unmuteVideo() {
+    if (!settings.enableAutoMute) return;
+    const video = document.querySelector('video');
+    if (video && !videoWasMuted) {
+        video.muted = false;
+    }
+}
+
+function trySkipAd() {
+    if (!settings.enableAutoSkip) return false;
+
     const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern');
-    const adPlaying = !!(playerStatus || skipButton);
+    if (skipButton && skipButton.offsetParent !== null) {
+        skipButton.click();
+        settings.adsSkipped++;
+        chrome.storage.local.set({ adsSkipped: settings.adsSkipped });
+        chrome.runtime.sendMessage({ action: 'adSkipped', count: settings.adsSkipped });
+        return true;
+    }
+    return false;
+}
 
-    // Update ad playing state
-    const newAdPlaying = adPlaying;
+function checkForAds() {
+    const isAd = document.querySelector('.ad-showing, .ytp-ad-player-overlay, .ytp-ad-module');
+    const skipButton = document.querySelector('.ytp-ad-skip-button');
 
-    if (newAdPlaying) {
-        // Ad detected
-        if (enableOverlay) {
+    if (isAd || skipButton) {
+        if (!isAdPlaying) {
+            // Ad just started
+            isAdPlaying = true;
             createOverlay();
+            muteVideo();
+            trySkipAd();
+        } else {
+            // Ad already playing, try to skip
+            trySkipAd();
         }
-
-        // Mute the ad
-        handleMute(true);
-
-        if (enableAutoSkip) {
-            // Try to click skip button
-            clickSkipButton();
-        }
-
-        isAdPlaying = true;
     } else {
-        // No ad detected
         if (isAdPlaying) {
             // Ad just ended
-            handleMute(false);
             isAdPlaying = false;
+            removeOverlay();
+            unmuteVideo();
         }
-
-        // Remove overlay
-        const overlay = document.getElementById('adex-overlay');
-        if (overlay) {
-            overlay.remove();
-        }
-    }
-
-    // Also check for ad text indicators
-    const adIndicators = document.querySelectorAll('[class*="ad"], [class*="Ad"]');
-    if (adIndicators.length > 0 && enableOverlay) {
-        createOverlay();
     }
 }
 
-// Initialize on page load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', monitorAds);
-} else {
-    monitorAds();
-}
+// Check for ads every second
+setInterval(checkForAds, 1000);
 
-// Monitor for dynamic ad changes
-const observer = new MutationObserver(() => {
-    monitorAds();
-});
-
-// Observe body changes
+// Also use mutation observer for more responsive detection
+const observer = new MutationObserver(checkForAds);
 observer.observe(document.body, {
     childList: true,
     subtree: true,
@@ -197,25 +119,4 @@ observer.observe(document.body, {
     attributeFilter: ['class']
 });
 
-// Also monitor for video changes
-const videoObserver = new MutationObserver(() => {
-    monitorAds();
-});
-
-// Wait for video container
-const checkForVideo = setInterval(() => {
-    const videoElement = document.querySelector('video');
-    if (videoElement) {
-        videoObserver.observe(videoElement, {
-            attributes: true,
-            attributeFilter: ['src']
-        });
-        clearInterval(checkForVideo);
-    }
-}, 1000);
-
-// Periodic check (for safety)
-setInterval(monitorAds, 500);
-
-console.log('AdEx: YouTube monitor initialized');
-
+console.log('AdEx: Initialized');
