@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdEx - YouTube Ad Overlay</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>🛡️ AdEx</h1>
+        <p class="subtitle">YouTube Ad Overlay & Auto-Skip</p>
+
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value" id="adsSkipped">0</div>
+                <div class="stat-label">Ads Skipped</div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <label class="toggle-label">
+                <input type="checkbox" id="enableOverlay" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">Enable Ad Overlay</span>
+            </label>
+
+            <label class="toggle-label">
+                <input type="checkbox" id="enableAutoSkip" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">Auto-Skip Ads</span>
+            </label>
+
+            <label class="toggle-label">
+                <input type="checkbox" id="enableAutoMute" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">Auto-Mute Ads</span>
+            </label>
+        </div>
+
+        <div class="overlay-options">
+            <label class="option-label">Overlay Type:</label>
+            <select id="overlayType" class="select-input">
+                <option value="black">Black Screen</option>
+                <option value="white">White Screen</option>
+                <option value="custom">Custom Image (Coming Soon)</option>
+            </select>
+        </div>
+
+        <div class="status" id="status">✓ Ready</div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>

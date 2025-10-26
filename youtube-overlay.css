@@ -1,0 +1,27 @@
+/* AdEx YouTube Overlay Styles */
+
+#adex-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999999;
+    pointer-events: none;
+    background-color: #000000;
+    transition: opacity 0.3s ease;
+}
+
+#adex-overlay.fade-in {
+    opacity: 1;
+}
+
+#adex-overlay.fade-out {
+    opacity: 0;
+}
+
+/* Ensure overlay covers the video */
+.ad-showing #adex-overlay,
+[class*="ad"] #adex-overlay {
+    pointer-events: all;
+}

@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+*.log
+
+# Keep icons in version control
+# Uncomment to exclude icons during development
+# icons/
+
